@@ -31,7 +31,7 @@ int main()
         v.push_back(ele);
     }
     int target;
-    cout << "enter your target: ";
+    cout << "enter your : ";
     cin >> target;
     cout << binary_search(v, target);
     return 0;
