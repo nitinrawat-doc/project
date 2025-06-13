@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>codelink syntax</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="sidebar-toggle" id="sidebarToggle">
+            &#9776;
+        </div>
+        <h1>codelink syntax</h1>
+    </nav>
+
+    <main class="container">
+        <div class="controls">
+            <select id="language">
+                <option value="c">C</option>
+                <option value="python">Python</option>
+                <option value="java">Java</option>
+            </select>
+            <button onclick="checkSyntax()">Check Syntax</button>
+            <button onclick="saveCode()">Save Code</button>
+            <button onclick="downloadCode()">Download Code</button>
+            <button onclick="toggleTheme()">Toggle Dark Mode</button>
+        </div>
+
+        <textarea id="codeInput" placeholder="Write your code here..."></textarea>
+
+        <div id="output"></div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy;say goodbye to errors with codelink syntax </p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

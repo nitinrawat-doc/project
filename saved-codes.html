@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Saved Codes - codelink syntax</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Specific styles for saved-codes.html */
+        .saved-codes-container {
+            padding: 20px;
+            max-width: 900px;
+            margin: 20px auto;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .saved-codes-container h2 {
+            text-align: center;
+            color: #007bff;
+            margin-bottom: 25px;
+        }
+        .saved-code {
+            background-color: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            cursor: pointer; /* Added cursor to indicate clickability */
+            transition: background-color 0.2s ease, transform 0.1s ease; /* Added transition */
+        }
+        .saved-code:hover { /* Added hover effect */
+            background-color: #e0e0e0;
+            transform: translateY(-2px);
+        }
+        .saved-code strong {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 1.1em;
+        }
+        .saved-code pre {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap; /* Allows long lines to wrap */
+            word-break: break-all; /* Breaks words if too long */
+        }
+        .saved-code .delete-btn {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+        .saved-code .delete-btn:hover {
+            background-color: #c82333;
+        }
+        .back-button { /* This button is no longer explicitly used, replaced by sidebar-toggle */
+            display: block;
+            width: fit-content;
+            margin: 20px auto 0;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+
+        /* Dark mode specific for saved-codes.html */
+        body.dark .saved-codes-container {
+            background-color: #1A1A1A;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        body.dark .saved-codes-container h2 {
+            color: #00FFC6;
+        }
+        body.dark .saved-code {
+            background-color: #2a2a2a;
+            border-color: #3a3a3a;
+        }
+        body.dark .saved-code:hover { /* Dark mode hover effect */
+            background-color: #3a3a3a;
+        }
+        body.dark .saved-code strong {
+            color: #e0e0e0;
+        }
+        body.dark .saved-code pre {
+            background-color: #1f1f1f;
+            color: #cccccc;
+        }
+    </style>
+</head>
+<body class="dark-mode-initial-check">
+    <nav class="navbar">
+        <div class="sidebar-toggle" id="sidebarToggle">
+            &larr; Back
+        </div>
+        <h1>Saved Codes</h1>
+    </nav>
+
+    <main class="container">
+        <div class="saved-codes-container" id="savedCodesDisplay">
+            </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2025 Syntax Checker Pro</p>
+    </footer>
+
+    <script>
+        // This script is for saved-codes.html
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedCodesDisplay = document.getElementById('savedCodesDisplay');
+            const sidebarToggleButton = document.getElementById('sidebarToggle');
+
+            function displaySavedCodes() {
+                const savedCodes = JSON.parse(localStorage.getItem('codes')) || [];
+                savedCodesDisplay.innerHTML = ""; // Clear previous content
+
+                if (savedCodes.length === 0) {
+                    savedCodesDisplay.innerHTML = "<p style='text-align: center; margin-top: 30px;'>No saved codes yet.</p>";
+                    return;
+                }
+
+                savedCodes.forEach((item, index) => {
+                    const codeDiv = document.createElement('div');
+                    codeDiv.classList.add('saved-code');
+                    // Store the actual code and language as data attributes
+                    codeDiv.dataset.code = item.code;
+                    codeDiv.dataset.language = item.language;
+                    codeDiv.dataset.index = index; // Keep index for deletion
+
+                    codeDiv.innerHTML = `
+                        <strong>${item.language.toUpperCase()} Code #${index + 1}</strong>
+                        <pre>${item.code}</pre>
+                        <button class="delete-btn" data-index="${index}">Delete</button>
+                    `;
+                    savedCodesDisplay.appendChild(codeDiv);
+                });
+
+                // Add event listeners for delete buttons
+                savedCodesDisplay.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', function(event) {
+                        event.stopPropagation(); // Prevent the parent div's click event from firing
+                        const indexToDelete = this.dataset.index;
+                        deleteSavedCode(indexToDelete);
+                    });
+                });
+
+                // Add event listeners for loading code into editor
+                savedCodesDisplay.querySelectorAll('.saved-code').forEach(codeItem => {
+                    codeItem.addEventListener('click', function() {
+                        const codeToLoad = this.dataset.code;
+                        const languageToLoad = this.dataset.language;
+
+                        // Save the selected code and its language to localStorage
+                        localStorage.setItem('codeToLoad', codeToLoad);
+                        localStorage.setItem('languageToLoad', languageToLoad);
+
+                        // Redirect back to the main editor page
+                        window.location.href = 'index.html';
+                    });
+                });
+            }
+
+            function deleteSavedCode(index) {
+                let savedCodes = JSON.parse(localStorage.getItem('codes')) || [];
+                savedCodes.splice(index, 1); // Remove item at specified index
+                localStorage.setItem('codes', JSON.stringify(savedCodes));
+                displaySavedCodes(); // Re-render the list
+            }
+
+            // Handle back button click
+            sidebarToggleButton.addEventListener('click', () => {
+                window.location.href = 'index.html'; // Navigate back to the main page
+            });
+
+            // Apply dark mode if it was active on the main page
+            if (localStorage.getItem('darkMode') === 'enabled') {
+                document.body.classList.add('dark');
+            }
+
+            displaySavedCodes(); // Initial display when page loads
+        });
+    </script>
+</body>
+</html>
