@@ -2,23 +2,28 @@
 using namespace std;
 class student
 {
-public:
+private:
     string name;
     int age;
+
+public:
     student(string n, int a)
     {
         name = n;
         age = a;
     }
-    void disp()
-    {
-        cout << name << age << endl;
-    }
-} int main()
+    friend void ayush(student);
+};
+void ayush(student r1)
+{
+    cout << "name: " << r1.name;
+    cout << "\n"
+         << "age: " << r1.age;
+}
+int main()
 {
     student s1("nitin", 19);
-    student s2 = s1;
-    s1.disp();
-    s2.disp();
+    ayush(s1);
+
     return 0;
 }

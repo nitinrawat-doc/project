@@ -11,9 +11,9 @@ int binary_search(vector<int> &v, int target)
         if (v[mid] == target)
             return mid;
         else if (v[mid] < target)
-            hi = mid - 1;
-        else
             low = mid + 1;
+        else
+            hi = mid - 1;
     }
     return -1;
 }
@@ -33,6 +33,6 @@ int main()
     int target;
     cout << "enter your : ";
     cin >> target;
-    cout << binary_search(v, target);
+    cout<<binary_search(v,target);
     return 0;
 }
