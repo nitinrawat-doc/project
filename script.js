@@ -1,191 +1,293 @@
+const themeToggle = document.getElementById('themeToggle');
+const body = document.body;
+
+if (localStorage.getItem('darkMode') === 'enabled') {
+    body.classList.add('dark');
+    themeToggle.textContent = '☀️';
+}
+
+themeToggle.addEventListener('click', () => {
+    body.classList.toggle('dark');
+    const isDark = body.classList.contains('dark');
+    themeToggle.textContent = isDark ? '☀️' : '🌙';
+    localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+});
+
+const menuBtn = document.getElementById('menuBtn');
+const sidebar = document.getElementById('sidebar');
+const closeBtn = document.getElementById('closeBtn');
+const overlay = document.getElementById('overlay');
+
+menuBtn.addEventListener('click', () => {
+    sidebar.classList.add('open');
+    overlay.classList.add('active');
+});
+
+closeBtn.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+});
+
+overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+});
+
+const codeInput = document.getElementById('codeInput');
+const lineNumbers = document.getElementById('lineNumbers');
+const languageSelect = document.getElementById('language');
+
+function updateLineNumbers() {
+    const lines = codeInput.value.split('\n').length;
+    lineNumbers.textContent = Array.from({length: lines}, (_, i) => i + 1).join('\n');
+}
+
+function updateStats() {
+    const code = codeInput.value;
+    const lines = code.split('\n').length;
+    const chars = code.length;
+    
+    document.getElementById('lineCount').textContent = lines;
+    document.getElementById('charCount').textContent = chars;
+    document.getElementById('currentLang').textContent = languageSelect.options[languageSelect.selectedIndex].text;
+    
+    const savedCodes = JSON.parse(localStorage.getItem('codes')) || [];
+    document.getElementById('savedCount').textContent = savedCodes.length;
+}
+
+codeInput.addEventListener('input', () => {
+    updateLineNumbers();
+    updateStats();
+});
+
+codeInput.addEventListener('scroll', () => {
+    lineNumbers.scrollTop = codeInput.scrollTop;
+});
+
+languageSelect.addEventListener('change', updateStats);
+
+updateLineNumbers();
+updateStats();
+
+const codeToLoad = localStorage.getItem('codeToLoad');
+const languageToLoad = localStorage.getItem('languageToLoad');
+
+if (codeToLoad && languageToLoad) {
+    codeInput.value = codeToLoad;
+    languageSelect.value = languageToLoad;
+    localStorage.removeItem('codeToLoad');
+    localStorage.removeItem('languageToLoad');
+    updateLineNumbers();
+    updateStats();
+    checkSyntax();
+}
+
 function checkSyntax() {
-    const code = document.getElementById('codeInput').value.trim();
-    const language = document.getElementById('language').value;
+    const code = codeInput.value.trim();
+    const language = languageSelect.value;
     const output = document.getElementById('output');
 
-    const lines = code.split("\n");
-    let messages = [];
-
-    if (language === "c") {
-        let hasMain = false;
-        lines.forEach((line, index) => {
-            if (line.includes("main(")) hasMain = true;
-
-            // Simple check for missing semicolons (basic heuristic)
-            const trimmedLine = line.trim();
-            if (trimmedLine !== "" &&
-                !trimmedLine.endsWith(";") &&
-                !trimmedLine.endsWith("{") && // Don't flag lines ending with {
-                !trimmedLine.endsWith("}") && // Don't flag lines ending with }
-                !trimmedLine.startsWith("#include") && // Don't flag include directives
-                !trimmedLine.startsWith("//") && // Don't flag comments
-                !trimmedLine.startsWith("/*") && // Don't flag multi-line comments
-                !trimmedLine.endsWith("*/") &&
-                !trimmedLine.includes("for (") && // Don't flag loop headers
-                !trimmedLine.includes("while (") &&
-                !trimmedLine.includes("if (") &&
-                !trimmedLine.includes("else") &&
-                !trimmedLine.includes("switch (") &&
-                !trimmedLine.includes("do") &&
-                !trimmedLine.includes("typedef") &&
-                !trimmedLine.includes("struct") &&
-                !trimmedLine.includes("enum")
-                ) {
-                messages.push(`⚠ C Warning at line ${index + 1}: Possibly missing semicolon or an incomplete statement.`);
-            }
-        });
-        if (!hasMain) {
-            messages.unshift("⚠ C Error: Missing 'main()' function.");
-        }
+    if (!code) {
+        output.innerHTML = '<p style="opacity: 0.5;">Please write some code first!</p>';
+        return;
     }
 
-    else if (language === "python") {
-        let hasDef = false;
+    const lines = code.split('\n');
+    let messages = [];
+
+    if (language === 'c' || language === 'cpp') {
+        let hasMain = false;
+        let braceCount = 0;
+        
         lines.forEach((line, index) => {
-            if (line.includes("def ")) hasDef = true;
-            if (line.includes(";")) {
-                messages.push(`⚠ Python Warning at line ${index + 1}: Unnecessary semicolon.`);
+            if (line.includes('main(')) hasMain = true;
+            braceCount += (line.match(/{/g) || []).length;
+            braceCount -= (line.match(/}/g) || []).length;
+
+            const trimmed = line.trim();
+            if (trimmed && !trimmed.endsWith(';') && !trimmed.endsWith('{') && 
+                !trimmed.endsWith('}') && !trimmed.startsWith('#') && 
+                !trimmed.startsWith('//') && !trimmed.includes('for (') &&
+                !trimmed.includes('while (') && !trimmed.includes('if (') &&
+                !trimmed.includes('else') && !trimmed.includes('switch (') &&
+                !trimmed.includes('do') && !trimmed.includes('typedef') &&
+                !trimmed.includes('struct') && !trimmed.includes('enum')) {
+                messages.push(`Line ${index + 1}: Possibly missing semicolon`);
             }
-            // Basic indentation check (very simple, not robust for complex cases)
-            const leadingSpaces = line.match(/^\s*/)[0].length;
-            if (leadingSpaces > 0 && index > 0) {
-                const prevLine = lines[index - 1];
-                const prevLeadingSpaces = prevLine.match(/^\s*/)[0].length;
-                if (line.trim() !== '' && prevLine.trim().endsWith(':') && leadingSpaces <= prevLeadingSpaces) {
-                    messages.push(`⚠ Python Warning at line ${index + 1}: Expected indentation after colon.`);
+        });
+
+        if (!hasMain) messages.unshift('Missing main() function');
+        if (braceCount !== 0) messages.push(`Brace mismatch: ${braceCount > 0 ? 'missing closing' : 'extra closing'} brace(s)`);
+    }
+    else if (language === 'python') {
+        lines.forEach((line, index) => {
+            if (line.includes(';')) {
+                messages.push(`Line ${index + 1}: Unnecessary semicolon in Python`);
+            }
+            if (index > 0 && lines[index - 1].trim().endsWith(':')) {
+                const prevIndent = lines[index - 1].match(/^\s*/)[0].length;
+                const currIndent = line.match(/^\s*/)[0].length;
+                if (line.trim() && currIndent <= prevIndent) {
+                    messages.push(`Line ${index + 1}: Expected indentation after colon`);
                 }
             }
         });
-        if (!hasDef && code.trim() !== '') { // Only warn if there's actual code but no def
-            messages.unshift(`⚠ Python Warning: No 'def' function found. Consider wrapping logic in functions.`);
-        }
     }
-
-    else if (language === "java") {
+    else if (language === 'java') {
         let hasMain = false;
-        lines.forEach((line, index) => {
-            if (line.includes("public static void main(String[] args)")) hasMain = true;
+        let braceCount = 0;
 
-            const trimmedLine = line.trim();
-            if (trimmedLine !== "" &&
-                !trimmedLine.endsWith(";") &&
-                !trimmedLine.endsWith("{") &&
-                !trimmedLine.endsWith("}") &&
-                !trimmedLine.startsWith("//") &&
-                !trimmedLine.startsWith("/*") &&
-                !trimmedLine.endsWith("*/") &&
-                !trimmedLine.includes("for (") &&
-                !trimmedLine.includes("while (") &&
-                !trimmedLine.includes("if (") &&
-                !trimmedLine.includes("else") &&
-                !trimmedLine.includes("switch (") &&
-                !trimmedLine.includes("import ") && // Don't flag imports
-                !trimmedLine.includes("package ") && // Don't flag package declarations
-                !trimmedLine.includes("class ") && // Don't flag class declarations
-                !trimmedLine.includes("interface ") && // Don't flag interface declarations
-                !trimmedLine.includes("enum ")
-                ) {
-                messages.push(`⚠ Java Warning at line ${index + 1}: Possibly missing semicolon or an incomplete statement.`);
+        lines.forEach((line, index) => {
+            if (line.includes('public static void main(String[] args)')) hasMain = true;
+            braceCount += (line.match(/{/g) || []).length;
+            braceCount -= (line.match(/}/g) || []).length;
+
+            const trimmed = line.trim();
+            if (trimmed && !trimmed.endsWith(';') && !trimmed.endsWith('{') &&
+                !trimmed.endsWith('}') && !trimmed.startsWith('//') &&
+                !trimmed.includes('import ') && !trimmed.includes('package ') &&
+                !trimmed.includes('class ') && !trimmed.includes('for (') &&
+                !trimmed.includes('while (') && !trimmed.includes('if (') &&
+                !trimmed.includes('interface ') && !trimmed.includes('enum ')) {
+                messages.push(`Line ${index + 1}: Possibly missing semicolon`);
             }
         });
-        if (!hasMain && code.trim() !== '') { // Only warn if there's actual code but no main
-            messages.unshift("⚠ Java Error: Missing 'public static void main(String[] args)' method.");
-        }
+
+        if (!hasMain && code.trim()) messages.unshift('Missing main method');
+        if (braceCount !== 0) messages.push('Brace mismatch detected');
+    }
+    else if (language === 'javascript') {
+        let braceCount = 0;
+        let parenCount = 0;
+
+        lines.forEach((line) => {
+            braceCount += (line.match(/{/g) || []).length;
+            braceCount -= (line.match(/}/g) || []).length;
+            parenCount += (line.match(/\(/g) || []).length;
+            parenCount -= (line.match(/\)/g) || []).length;
+        });
+
+        if (braceCount !== 0) messages.push('Brace mismatch detected');
+        if (parenCount !== 0) messages.push('Parenthesis mismatch detected');
     }
 
     if (messages.length === 0) {
-        output.innerHTML = "<strong>Result:</strong> ✅ No major syntax issues detected.";
-        output.style.color = '#28a745'; // Green for success
+        output.innerHTML = '<div class="output-success">✅ No syntax issues detected! Your code looks great!</div>';
     } else {
-        output.innerHTML = "<strong>Result:</strong><ul style='list-style-type: none; padding-left: 0;'><li>" + messages.join("</li><li>") + "</li></ul>";
-        output.style.color = '#dc3545'; // Red for errors/warnings
+        output.innerHTML = '<ul class="output-errors">' + 
+            messages.map(msg => `<li>⚠️ ${msg}</li>`).join('') + 
+            '</ul>';
     }
 }
 
 function saveCode() {
-    const code = document.getElementById('codeInput').value.trim();
-    const language = document.getElementById('language').value;
+    const code = codeInput.value.trim();
+    const language = languageSelect.value;
 
     if (!code) {
-        alert("Please write some code before saving.");
+        alert('Please write some code before saving.');
         return;
     }
 
     let savedCodes = JSON.parse(localStorage.getItem('codes')) || [];
-    // Add a timestamp for unique identification/sorting later if needed
-    savedCodes.push({ language, code, savedAt: new Date().toISOString() });
+    savedCodes.push({
+        language,
+        code,
+        savedAt: new Date().toISOString(),
+        name: `${language.toUpperCase()} Code #${savedCodes.length + 1}`
+    });
     localStorage.setItem('codes', JSON.stringify(savedCodes));
-
-    alert("Code saved successfully!"); // Provide feedback
+    updateStats();
+    alert('✅ Code saved successfully!');
 }
 
 function downloadCode() {
-    const code = document.getElementById('codeInput').value.trim();
-    const language = document.getElementById('language').value;
+    const code = codeInput.value.trim();
+    const language = languageSelect.value;
 
     if (!code) {
-        alert("Please write some code to download.");
+        alert('Please write some code to download.');
         return;
     }
 
-    const blob = new Blob([code], { type: "text/plain" });
+    const extensions = {
+        c: '.c',
+        cpp: '.cpp',
+        python: '.py',
+        java: '.java',
+        javascript: '.js'
+    };
+
+    const blob = new Blob([code], { type: 'text/plain' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-
-    let filename = "mycode";
-    if (language === "c") filename += ".c";
-    else if (language === "python") filename += ".py";
-    else if (language === "java") filename += ".java";
-    else filename += ".txt"; // Default to .txt for unknown languages
-
-    a.download = filename;
-    document.body.appendChild(a);
+    a.download = `code${extensions[language] || '.txt'}`;
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(a.href); // Clean up the URL object
+    URL.revokeObjectURL(a.href);
 }
 
-function toggleTheme() {
-    const isDark = document.body.classList.toggle('dark');
-    // Save dark mode preference to localStorage
-    if (isDark) {
-        localStorage.setItem('darkMode', 'enabled');
+function copyCode() {
+    const code = codeInput.value;
+    if (!code) {
+        alert('Nothing to copy!');
+        return;
+    }
+    navigator.clipboard.writeText(code).then(() => {
+        alert('✅ Code copied to clipboard!');
+    });
+}
+
+function formatCode() {
+    let code = codeInput.value;
+    const language = languageSelect.value;
+
+    if (language === 'python') {
+        const lines = code.split('\n');
+        let indentLevel = 0;
+        code = lines.map(line => {
+            const trimmed = line.trim();
+            if (trimmed.endsWith(':')) {
+                const formatted = '    '.repeat(indentLevel) + trimmed;
+                indentLevel++;
+                return formatted;
+            } else if (trimmed && indentLevel > 0) {
+                return '    '.repeat(indentLevel) + trimmed;
+            }
+            return trimmed;
+        }).join('\n');
     } else {
-        localStorage.removeItem('darkMode');
+        code = code.replace(/\s*{\s*/g, ' {\n');
+        code = code.replace(/\s*}\s*/g, '\n}\n');
+        code = code.replace(/;/g, ';\n');
     }
+
+    codeInput.value = code;
+    updateLineNumbers();
+    updateStats();
+    alert('✨ Code formatted!');
 }
 
-// Event listener for the sidebar toggle button AND loading saved code
-document.addEventListener('DOMContentLoaded', () => {
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    const codeInput = document.getElementById('codeInput');
-    const languageSelect = document.getElementById('language');
-
-    if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', () => {
-            // Redirect to the new saved codes page
-            window.location.href = 'saved-codes.html';
-        });
+document.getElementById('clearBtn').addEventListener('click', () => {
+    if (confirm('Are you sure you want to clear the editor?')) {
+        codeInput.value = '';
+        updateLineNumbers();
+        updateStats();
+        document.getElementById('output').innerHTML = '<p style="opacity: 0.5;">Your syntax check results will appear here...</p>';
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
     }
+});
 
-    // Apply dark mode preference on load for index.html
-    if (localStorage.getItem('darkMode') === 'enabled') {
-        document.body.classList.add('dark');
-    }
+document.getElementById('aboutLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    alert('CodeLink Syntax Pro v2.0\n\nA powerful syntax checker with real-time analysis!\n\nFeatures:\n✓ Multi-language support\n✓ Line numbers\n✓ Live statistics\n✓ Dark mode\n✓ Code formatting\n✓ Save & Download');
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+});
 
-    // Check if there's code to load from the saved codes page
-    const codeToLoad = localStorage.getItem('codeToLoad');
-    const languageToLoad = localStorage.getItem('languageToLoad');
-
-    if (codeToLoad && languageToLoad) {
-        codeInput.value = codeToLoad;
-        languageSelect.value = languageToLoad;
-
-        // Clear the items from localStorage so they don't load again on next visit
-        localStorage.removeItem('codeToLoad');
-        localStorage.removeItem('languageToLoad');
-        
-        // Optional: Run syntax check automatically after loading the code
-        checkSyntax(); 
-    }
+document.getElementById('settingsLink').addEventListener('click', (e) => {
+    e.preventDefault();
+    alert('Settings coming soon! 🎯');
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
 });

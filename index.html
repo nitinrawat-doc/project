@@ -2,38 +2,102 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>codelink syntax</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeLink Syntax Checker Pro</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <nav class="navbar">
-        <div class="sidebar-toggle" id="sidebarToggle">
-            &#9776;
+        <div class="navbar-left">
+            <button class="menu-btn" id="menuBtn">☰</button>
+            <div class="logo">
+                <div class="logo-icon">CL</div>
+                CodeLink Syntax Pro
+            </div>
         </div>
-        <h1>codelink syntax</h1>
+        <div class="navbar-right">
+            <button class="theme-toggle" id="themeToggle">🌙</button>
+        </div>
     </nav>
 
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3 class="sidebar-title">Menu</h3>
+            <button class="close-btn" id="closeBtn">×</button>
+        </div>
+        <ul class="sidebar-nav">
+            <li><a href="#" id="homeLink">🏠 Home</a></li>
+            <li><a href="saved-codes.html">💾 Saved Codes</a></li>
+            <li><a href="#" id="clearBtn">🗑️ Clear Editor</a></li>
+            <li><a href="#" id="settingsLink">⚙️ Settings</a></li>
+            <li><a href="#" id="aboutLink">ℹ️ About</a></li>
+        </ul>
+    </div>
+    <div class="overlay" id="overlay"></div>
+
     <main class="container">
-        <div class="controls">
-            <select id="language">
-                <option value="c">C</option>
-                <option value="python">Python</option>
-                <option value="java">Java</option>
-            </select>
-            <button onclick="checkSyntax()">Check Syntax</button>
-            <button onclick="saveCode()">Save Code</button>
-            <button onclick="downloadCode()">Download Code</button>
-            <button onclick="toggleTheme()">Toggle Dark Mode</button>
+        <div class="stats-bar animate-in">
+            <div class="stat-card">
+                <div class="stat-label">Lines of Code</div>
+                <div class="stat-value" id="lineCount">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Characters</div>
+                <div class="stat-value" id="charCount">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Saved Codes</div>
+                <div class="stat-value" id="savedCount">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Current Language</div>
+                <div class="stat-value" id="currentLang">C</div>
+            </div>
         </div>
 
-        <textarea id="input code" placeholder="Write your code here..."></textarea>
-        
+        <div class="editor-section animate-in">
+            <div class="editor-toolbar">
+                <select class="language-select" id="language">
+                    <option value="c">C Language</option>
+                    <option value="cpp">C++</option>
+                    <option value="python">Python</option>
+                    <option value="java">Java</option>
+                    <option value="javascript">JavaScript</option>
+                </select>
+                <button class="btn btn-success" onclick="checkSyntax()">
+                    ✓ Check Syntax
+                </button>
+                <button class="btn" onclick="saveCode()">
+                    💾 Save Code
+                </button>
+                <button class="btn" onclick="downloadCode()">
+                    ⬇️ Download
+                </button>
+                <button class="btn" onclick="copyCode()">
+                    📋 Copy
+                </button>
+                <button class="btn" onclick="formatCode()">
+                    ✨ Format
+                </button>
+            </div>
+            <div class="editor-wrapper">
+                <div class="line-numbers" id="lineNumbers">1</div>
+                <textarea class="code-editor" id="codeInput" placeholder="Start coding here..." spellcheck="false"></textarea>
+            </div>
+        </div>
 
-        <div id="output"></div>
+        <div class="output-section animate-in">
+            <div class="output-header">
+                📊 Analysis Results
+            </div>
+            <div class="output-content" id="output">
+                <p style="opacity: 0.5;">Your syntax check results will appear here...</p>
+            </div>
+        </div>
     </main>
 
     <footer class="footer">
-        <p>&copy;say goodbye to errors with codelink syntax </p>
+        <p>&copy; 2025 CodeLink Syntax Pro - Say goodbye to errors ✨</p>
     </footer>
 
     <script src="script.js"></script>
